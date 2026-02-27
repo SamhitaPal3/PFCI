@@ -1,0 +1,20 @@
+---
+title: "Getting started with PFCI"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with PFCI}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Toy Example
+
+```{r setup, include=FALSE}
+library(PFCI)
+toy <- simulate_pfci_toy(p_obs = 50, gamma = 0.1, n = 200, seed = 1)
+fit <- pfci_fit(toy$X)
+fit
+plot_pag(fit)
+```
+
+
