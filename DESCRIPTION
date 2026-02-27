@@ -1,0 +1,32 @@
+Package: PFCI
+Title: Penalized Fast Causal Inference
+Version: 0.0.1
+Authors@R: c(
+    person(given = "Samhita", family = "Pal", email = "spal4@ncsu.edu", role = "aut"),
+    person(given = "Dhrubajyoti", family = "Ghosh", email = "dghosh3@kennesaw.edu", role = c("aut", "cre"))
+    )
+Description: Implements Penalized Fast Causal Inference (PFCI), a two-stage
+    causal structure learning procedure for high-dimensional settings.
+    The method combines graphical lasso screening with constrained
+    Fast Causal Inference (FCI) to reduce computational burden while
+    preserving consistency under sparsity assumptions. The package
+    provides estimation, toy simulation, and evaluation utilities
+    for partially directed acyclic graphs (PAGs).
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports:
+    methods,
+    stats,
+    graphics,
+    glasso,
+    pcalg,
+    graph,
+    igraph
+Suggests:
+    testthat,
+    knitr,
+    rmarkdown,
+    Rgraphviz
+VignetteBuilder: knitr
