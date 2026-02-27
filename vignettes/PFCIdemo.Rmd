@@ -1,0 +1,148 @@
+---
+title: "PFCI demo"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+    theme: readable
+    df_print: paged
+date: "2026-02-26"
+---
+
+```{r setup, include=TRUE}
+library(PFCI)
+
+# Generate Data
+sim <- simulate_pfci_toy(p = 100, sparsity = 100, n = 100, edge_prob = 0.02, errDist = "normal", seed = 1)
+
+# Run PFCI from package
+fit <- pfci_fit(sim$X, alpha = 0.05)   # or pfci_fit(sim$X, ...) depending on your export
+
+# Compute metrics
+met <- pfci_metrics(sim, fit)
+met
+```
+
+```{r, include=TRUE}
+################################################################################
+## Replicates runner + summarizer 
+################################################################################
+
+run_pfci_reps <- function(p, sparsity = p, n = 100, edge_prob = 0.005,
+                          R = 20, seed0 = 1,
+                          alpha = 0.05, approx = TRUE) {
+
+  scenarios <- list(
+    "Gaussian errors" = "normal",
+    "t4 heavy tails"  = "t4",
+    "mixt3"           = "mixt3"
+  )
+
+  out <- vector("list", length(scenarios) * R)
+  idx <- 1L
+
+  for (sc_name in names(scenarios)) {
+    err <- scenarios[[sc_name]]
+
+    for (r in seq_len(R)) {
+      seed_use <- seed0 + 1000L * match(sc_name, names(scenarios)) + r
+
+      row <- tryCatch({
+        sim <- PFCI::simulate_pfci_toy(
+          p = p, sparsity = sparsity, n = n,
+          edge_prob = edge_prob, errDist = err, seed = seed_use
+        )
+
+        fit <- PFCI::pfci_fit(sim$X, alpha = alpha, approx = approx)
+
+        met <- PFCI::pfci_metrics(sim, fit)
+
+        # runtime field name is "Time" in your pfci_metrics(); fall back safely
+        tt <- if (!is.null(met$time_total)) met$time_total else met$Time
+
+        data.frame(
+          scenario   = sc_name,
+          rep        = r,
+          SHD        = as.numeric(met$SHD),
+          F1_total   = as.numeric(met$F1_total),
+          MCC        = as.numeric(met$MCC),
+          time_total = as.numeric(tt),
+          ok         = TRUE,
+          err_msg    = NA_character_,
+          check.names = FALSE
+        )
+      }, error = function(e) {
+        data.frame(
+          scenario   = sc_name,
+          rep        = r,
+          SHD        = NA_real_,
+          F1_total   = NA_real_,
+          MCC        = NA_real_,
+          time_total = NA_real_,
+          ok         = FALSE,
+          err_msg    = conditionMessage(e),
+          check.names = FALSE
+        )
+      })
+
+      out[[idx]] <- row
+      idx <- idx + 1L
+    }
+  }
+
+  res <- do.call(rbind, out)
+  rownames(res) <- NULL
+  res
+}
+
+
+summarize_pfci <- function(df) {
+  stopifnot(is.data.frame(df))
+  stopifnot(all(c("scenario","SHD","F1_total","MCC","time_total") %in% names(df)))
+
+  df_ok <- df[df$ok %in% TRUE, , drop = FALSE]
+
+  # if user wants a hard fail when nothing succeeded:
+  if (nrow(df_ok) == 0) stop("No successful reps (ok=TRUE). Check df$err_msg.")
+
+  agg_fun <- function(x) c(mean = mean(x, na.rm = TRUE), sd = stats::sd(x, na.rm = TRUE))
+
+  agg <- aggregate(
+    cbind(SHD, F1_total, MCC, time_total) ~ scenario,
+    data = df_ok,
+    FUN = agg_fun
+  )
+
+  # unpack the matrix columns produced by aggregate()
+  unpack <- function(matcol, nm) {
+    data.frame(
+      setNames(list(matcol[, "mean"]), paste0(nm, ".mean")),
+      setNames(list(matcol[, "sd"]),   paste0(nm, ".sd"))
+    )
+  }
+
+  out <- data.frame(scenario = agg$scenario, check.names = FALSE)
+  out <- cbind(out,
+               unpack(agg$SHD, "SHD"),
+               unpack(agg$F1_total, "F1_total"),
+               unpack(agg$MCC, "MCC"),
+               unpack(agg$time_total, "time_total"))
+
+  rownames(out) <- NULL
+  out
+}
+
+################################################################################
+## Example runs (your exact display)
+################################################################################
+set.seed(1)
+res_A <- run_pfci_reps(p = 500, sparsity = 500, n = 100, edge_prob = 0.005, R = 2, seed0 = 1) # <-- increase R = 100 for more replications
+cat("\n=== Results A (p=500) ===\n")
+print(summarize_pfci(res_A))
+
+set.seed(2)
+res_B <- run_pfci_reps(p = 700, sparsity = 700, n = 100, edge_prob = 0.005, R = 2, seed0 = 2)
+cat("\n=== Results B (p=700) ===\n")
+print(summarize_pfci(res_B))
+```
