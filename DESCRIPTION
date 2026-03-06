@@ -23,7 +23,8 @@ Imports:
     glasso,
     pcalg,
     graph,
-    igraph
+    igraph,
+    RBGL
 Suggests:
     testthat,
     knitr,
