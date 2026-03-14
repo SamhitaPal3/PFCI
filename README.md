@@ -27,6 +27,9 @@ sim <- simulate_pfci_toy()
 fit <- pfci_fit(sim$X)
 met <- pfci_metrics(sim, fit)
 met
+
+BiocManager::install("Rgraphviz")
+plot_pag(fit)
 ```
 # Reference
 Pal, S., Ghosh, D., & Yang, S. (2025). Penalized FCI for Causal Structure Learning in a Sparse DAG for Biomarker Discovery in Parkinson's Disease. arXiv preprint arXiv:2507.00173.
