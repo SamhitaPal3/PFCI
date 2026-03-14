@@ -17,6 +17,8 @@ Install the development version from GitHub:
 
 ```r
 # install.packages("devtools")
+install.packages("BiocManager")
+BiocManager::install(c("graph", "RBGL", "ggm", "pcalg"))
 devtools::install_github("SamhitaPal3/PFCI")
 
 library(PFCI)
